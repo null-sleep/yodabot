@@ -1,0 +1,51 @@
+# Define your service name in the package.json file
+service: ${file(package.json):name}
+frameworkVersion: ">=1.13.2 <2.0.0"
+
+# Optional plugins
+plugins:
+  - serverless-python-requirements
+
+package:
+  exclude:
+    - docs/**
+    - node_modules/**
+    - test/**
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: prod
+  region: insert your own
+  deploymentBucket: serverless-slack-notifier-bot
+  vpc:
+    securityGroupIds:
+      - insert your own
+    subnetIds:
+      - insert your own
+  environment:  # <- these are available in any file
+    SERVICE: ${self:service}
+    STAGE: ${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "execute-api:Invoke"
+      Resource: "arn:aws:execute-api:*:*:*"
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource: "arn:aws:lambda:*:insert your own account id:function:*"
+    - Effect: Allow
+      Action:
+        - xray:PutTraceSegments
+        - xray:PutTelemetryRecords
+      Resource: "*"
+
+functions:
+  call:
+    handler: handlers/lambda.lambda_handler
+    events:
+      - http:
+          path: call
+          method: any
+
